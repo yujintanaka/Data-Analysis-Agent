@@ -7,11 +7,12 @@ from typing import Literal
 from .tools import make_sql_query, complete_python_task
 from langgraph.prebuilt import ToolNode
 import os
-from dotenv import load_dotenv
+#from dotenv import load_dotenv
 from sqlalchemy import inspect
 from .db_utils import get_db_session
 
-load_dotenv()
+#load_dotenv()
+
 
 llm = ChatOpenAI(model="gpt-4o", temperature=0)
 
