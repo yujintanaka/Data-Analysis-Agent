@@ -1,6 +1,7 @@
 # Standard library imports
 import os
 import pickle
+import socket
 
 # Third-party imports
 import streamlit as st
@@ -15,6 +16,14 @@ import psycopg2
 
 # Local imports
 from pages.backend import PythonChatBot
+
+def is_remote_host():
+    """
+    Check if the app is running on a remote host.
+    Returns True if the hostname is not 'localhost' or '127.0.0.1'.
+    """
+    hostname = socket.gethostname()
+    return hostname not in ['localhost', '127.0.0.1']
 
 st.title("Data Analysis LangGraph Agent")
 st.write("Select a database connection from the sidebar to begin.")
@@ -105,68 +114,85 @@ if 'stored_figures' not in st.session_state:
 # Sidebar for database connection
 st.sidebar.title("Database Connection")
 
-db_type = st.sidebar.selectbox(
-    "Select Database Type",
-    ["SQLite", "MySQL", "PostgreSQL"]
-)
-
-# Create an expander for connection fields
-with st.sidebar.expander("Connection Settings", expanded=not st.session_state.connection_status):
-    if db_type == "SQLite":
-        db_path = st.text_input("Database Path", "database.db")
-        if st.button("Connect to SQLite"):
-            uri, engine, error = get_database_connection("SQLite", db_path=db_path)
+# If running remotely, only allow SQLite with chinook.db
+if is_remote_host():
+    st.sidebar.warning("⚠️ Remote Host Detected: You can only connect to our sample database.")
+    db_type = "SQLite"
+    if not st.session_state.connection_status:
+        if st.sidebar.button("Connect to chinook.db"):
+            uri, engine, error = get_database_connection("SQLite", db_path="data/chinook.db")
             if error:
                 st.error(f"Connection Error: {error}")
                 st.session_state.connection_status = False
             else:
-                st.success("Successfully connected to SQLite database!")
+                st.success("Successfully connected to chinook.db!")
                 st.session_state.connection_status = True
                 st.session_state.db_type = "SQLite"
                 st.session_state.db_schema = get_schema(engine)
                 st.session_state.db_uri = uri
+else:
+    db_type = st.sidebar.selectbox(
+        "Select Database Type",
+        ["SQLite", "MySQL", "PostgreSQL"]
+    )
 
-    elif db_type == "MySQL":
-        host = st.text_input("Host", "localhost")
-        port = st.number_input("Port", value=3306)
-        user = st.text_input("Username")
-        password = st.text_input("Password", type="password")
-        database = st.text_input("Database Name")
-    
-        if st.button("Connect to MySQL"):
-            uri, engine, error = get_database_connection("MySQL", 
-                host=host, port=port, user=user, 
-                password=password, database=database)
-            if error:
-                st.error(f"Connection Error: {error}")
-                st.session_state.connection_status = False
-            else:
-                st.success("Successfully connected to MySQL database!")
-                st.session_state.connection_status = True
-                st.session_state.db_type = "MySQL"
-                st.session_state.db_schema = get_schema(engine)
-                st.session_state.db_uri = uri
+    # Create an expander for connection fields
+    with st.sidebar.expander("Connection Settings", expanded=not st.session_state.connection_status):
+        if db_type == "SQLite":
+            db_path = st.text_input("Database Path", "database.db")
+            if st.button("Connect to SQLite"):
+                uri, engine, error = get_database_connection("SQLite", db_path=db_path)
+                if error:
+                    st.error(f"Connection Error: {error}")
+                    st.session_state.connection_status = False
+                else:
+                    st.success("Successfully connected to SQLite database!")
+                    st.session_state.connection_status = True
+                    st.session_state.db_type = "SQLite"
+                    st.session_state.db_schema = get_schema(engine)
+                    st.session_state.db_uri = uri
 
-    elif db_type == "PostgreSQL":
-        host = st.text_input("Host", "localhost")
-        port = st.number_input("Port", value=5432)
-        user = st.text_input("Username")
-        password = st.text_input("Password", type="password")
-        database = st.text_input("Database Name")
+        elif db_type == "MySQL":
+            host = st.text_input("Host", "localhost")
+            port = st.number_input("Port", value=3306)
+            user = st.text_input("Username")
+            password = st.text_input("Password", type="password")
+            database = st.text_input("Database Name")
         
-        if st.button("Connect to PostgreSQL"):
-            uri, engine, error = get_database_connection("PostgreSQL", 
-                host=host, port=port, user=user, 
-                password=password, database=database)
-            if error:
-                st.error(f"Connection Error: {error}")
-                st.session_state.connection_status = False
-            else:
-                st.success("Successfully connected to PostgreSQL database!")
-                st.session_state.connection_status = True
-                st.session_state.db_type = "PostgreSQL"
-                st.session_state.db_schema = get_schema(engine)
-                st.session_state.db_uri = uri
+            if st.button("Connect to MySQL"):
+                uri, engine, error = get_database_connection("MySQL", 
+                    host=host, port=port, user=user, 
+                    password=password, database=database)
+                if error:
+                    st.error(f"Connection Error: {error}")
+                    st.session_state.connection_status = False
+                else:
+                    st.success("Successfully connected to MySQL database!")
+                    st.session_state.connection_status = True
+                    st.session_state.db_type = "MySQL"
+                    st.session_state.db_schema = get_schema(engine)
+                    st.session_state.db_uri = uri
+
+        elif db_type == "PostgreSQL":
+            host = st.text_input("Host", "localhost")
+            port = st.number_input("Port", value=5432)
+            user = st.text_input("Username")
+            password = st.text_input("Password", type="password")
+            database = st.text_input("Database Name")
+            
+            if st.button("Connect to PostgreSQL"):
+                uri, engine, error = get_database_connection("PostgreSQL", 
+                    host=host, port=port, user=user, 
+                    password=password, database=database)
+                if error:
+                    st.error(f"Connection Error: {error}")
+                    st.session_state.connection_status = False
+                else:
+                    st.success("Successfully connected to PostgreSQL database!")
+                    st.session_state.connection_status = True
+                    st.session_state.db_type = "PostgreSQL"
+                    st.session_state.db_schema = get_schema(engine)
+                    st.session_state.db_uri = uri
 
 # Display schema if available
 if st.session_state.db_schema:
