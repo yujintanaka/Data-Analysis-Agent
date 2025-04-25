@@ -19,11 +19,10 @@ from pages.backend import PythonChatBot
 
 def is_remote_host():
     """
-    Check if the app is running on a remote host.
-    Returns True if the hostname is not 'localhost' or '127.0.0.1'.
+    Check if the app is running on Streamlit Cloud.
+    Returns True if running on Streamlit Cloud, False if running locally.
     """
-    hostname = socket.gethostname()
-    return hostname not in ['localhost', '127.0.0.1']
+    return st.get_option("server.address") != "localhost"
 
 st.title("Data Analysis LangGraph Agent")
 st.write("Select a database connection from the sidebar to begin.")
@@ -114,9 +113,9 @@ if 'stored_figures' not in st.session_state:
 # Sidebar for database connection
 st.sidebar.title("Database Connection")
 
-# If running remotely, only allow SQLite with chinook.db
+# If running on Streamlit Cloud, only allow SQLite with chinook.db
 if is_remote_host():
-    st.sidebar.warning("⚠️ Remote Host Detected: You can only connect to our sample database.")
+    st.sidebar.warning("⚠️ Running on Streamlit Cloud: You can only connect to our sample database.")
     db_type = "SQLite"
     if not st.session_state.connection_status:
         if st.sidebar.button("Connect to chinook.db"):
@@ -131,6 +130,7 @@ if is_remote_host():
                 st.session_state.db_schema = get_schema(engine)
                 st.session_state.db_uri = uri
 else:
+    st.sidebar.info("Running locally: You can connect to any database.")
     db_type = st.sidebar.selectbox(
         "Select Database Type",
         ["SQLite", "MySQL", "PostgreSQL"]
