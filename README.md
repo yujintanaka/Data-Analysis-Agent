@@ -17,12 +17,28 @@ Connect to your database and ask your Assistant to do anything!
 
 This application utilizes a custom langgraph agent built with a ReAct (Reasoning and Acting) architecture. The agent is designed to help users understand, analyze, and visualize their data through an interactive conversation.
 
-### State Management
-The agent maintains a structured state using `AgentState` that includes:
-- Message history for conversation tracking
-- Intermediate outputs for debugging and transparency
-- Input data containing database configuration
-- Output image paths for visualization storage
+### Graph Implementation
+The agent is built using LangGraph's `StateGraph` with the following components:
+
+1. **Nodes**:
+   - `get_table_schema`: Initial node that retrieves database schema
+   - `agent`: Core brain node for decision making
+   - `tools`: Executes selected tools (SQL queries and Python tasks)
+   - `handle_tool_output`: Processes tool outputs and updates state
+
+2. **Graph Flow**:
+   ```
+   get_table_schema → agent → tools → handle_tool_output → agent
+   ```
+   - Conditional routing from agent to tools based on decision
+   - Recursive execution with a limit of 15 iterations
+   - Streaming support for real-time updates
+
+3. **State Management**:
+   - Maintains conversation history
+   - Tracks intermediate outputs for debugging
+   - Manages visualization paths
+   - Handles database configuration
 
 ### Core Tools
 The agent has access to two specialized tools:
