@@ -2,6 +2,9 @@ import os
 import streamlit as st
 from dotenv import load_dotenv
 
+
+st.set_page_config(page_title="EDA App", page_icon=":bar_chart:", layout="wide")
+
 def is_remote_host():
     """
     Check if the app is running on Streamlit Cloud.
@@ -32,7 +35,6 @@ else:
 # Set the API key for the OpenAI library
 os.environ["OPENAI_API_KEY"] = api_key
 
-st.set_page_config(page_title="EDA App", page_icon=":bar_chart:", layout="wide")
 
 data_visualization_page = st.Page(
     "./pages/frontend.py", title="Data Visualization", icon="📈"
