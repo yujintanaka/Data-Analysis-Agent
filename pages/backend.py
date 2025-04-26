@@ -22,6 +22,7 @@ class PythonChatBot:
     
     def invoke_graph(self, user_query, input_data):
         starting_image_paths_set = set(sum(self.output_image_paths.values(), []))
+        # Clear intermediate outputs before each new graph execution
         input_state = {
             "messages": self.chat_history + [HumanMessage(content=user_query)],
             "input_data": input_data,
@@ -32,7 +33,7 @@ class PythonChatBot:
         new_image_paths = set(result["output_image_paths"]) - starting_image_paths_set
         self.output_image_paths[len(self.chat_history) - 1] = list(new_image_paths)
         if "intermediate_outputs" in result:
-            self.intermediate_outputs.extend(result["intermediate_outputs"])
+            self.intermediate_outputs = result["intermediate_outputs"]
         
     def reset_chat(self):
         self.chat_history = []
