@@ -11,7 +11,7 @@ from sqlalchemy import inspect
 from .db_utils import get_db_session
 
 
-llm = ChatOpenAI(model="gpt-4o", temperature=0, streaming=True)
+llm = ChatOpenAI(model="gpt-4o", temperature=0)
 
 tools = [make_sql_query, complete_python_task]
 

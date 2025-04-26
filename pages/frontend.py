@@ -2,7 +2,7 @@
 import os
 import pickle
 import socket
-
+import json
 # Third-party imports
 import streamlit as st
 import pandas as pd
@@ -29,8 +29,8 @@ def is_remote_host():
     except:
         return False
 
-st.title("Data Analysis LangGraph Agent")
-st.write("Select a database connection from the sidebar to begin.")
+st.header("Data Analysis LangGraph Agent")
+
 
 def get_database_connection(db_type, **kwargs):
     """
@@ -219,58 +219,56 @@ if st.session_state.db_schema:
                 st.write(f"- {col['name']} ({col['type']})")
 
 
-tab1, tab2 = st.tabs(["Chat Interface", "Debug"])
+tab1, tab2 = st.tabs(["Chat Interface", "Agent Actions"])
 
 
 # Main content area for chatbot
 with tab1:
     if st.session_state.connection_status:
-        # Initialize chat history in session state if it doesn't exist
-        if 'chat_history' not in st.session_state:
-            st.session_state.chat_history = []
+
+        if 'chatbot' not in st.session_state:
             st.session_state.chatbot = PythonChatBot()
         
         # Display chat history
-        for message_index, message in enumerate(st.session_state.chatbot.chat_history):
-            if message.content != "":
-                if isinstance(message, HumanMessage):
-                    st.chat_message("Human").markdown(message.content)
-                elif isinstance(message, AIMessage):
-                    with st.chat_message("AI"):
-                        st.markdown(message.content)
+        chat_container = st.container(height=500)
+        with chat_container:
+            for message_index, message in enumerate(st.session_state.chatbot.chat_history):
+                if message.content != "":
+                    if isinstance(message, HumanMessage):
+                        st.chat_message("Human").markdown(message.content)
+                    elif isinstance(message, AIMessage):
+                        with st.chat_message("AI"):
+                            st.markdown(message.content)
 
-                if isinstance(message, AIMessage) and message_index in st.session_state.chatbot.output_image_paths:
-                    # Display stored figures if available
-                    if message_index in st.session_state.stored_figures:
-                        for fig in st.session_state.stored_figures[message_index]:
-                            st.plotly_chart(fig, use_container_width=True)
-                    else:
-                        # If figures aren't in session state, try to load from pickle files
-                        image_paths = st.session_state.chatbot.output_image_paths[message_index]
-                        for image_path in image_paths:
-                            pickle_path = os.path.join("images/plotly_figures/pickle", image_path)
-                            try:
-                                with open(pickle_path, "rb") as f:
-                                    fig = pickle.load(f)
-
-                                # Store the figure in session state
-                                if message_index not in st.session_state.stored_figures:
-                                    st.session_state.stored_figures[message_index] = []
-                                st.session_state.stored_figures[message_index].append(fig)
+                    if isinstance(message, AIMessage) and message_index in st.session_state.chatbot.output_image_paths:
+                        # Display stored figures if available
+                        if message_index in st.session_state.stored_figures:
+                            for fig in st.session_state.stored_figures[message_index]:
                                 st.plotly_chart(fig, use_container_width=True)
-                                # Delete the pickle file after loading
+                        else:
+                            # If figures aren't in session state, try to load from pickle files
+                            image_paths = st.session_state.chatbot.output_image_paths[message_index]
+                            for image_path in image_paths:
+                                pickle_path = os.path.join("images/plotly_figures/pickle", image_path)
                                 try:
-                                    os.remove(pickle_path)
-                                except Exception as e:
-                                    st.warning(f"Could not delete pickle file: {e}")
-                            except FileNotFoundError:
-                                st.warning(f"Figure file not found: {image_path}")
-        
+                                    with open(pickle_path, "rb") as f:
+                                        fig = pickle.load(f)
+
+                                    # Store the figure in session state
+                                    if message_index not in st.session_state.stored_figures:
+                                        st.session_state.stored_figures[message_index] = []
+                                    st.session_state.stored_figures[message_index].append(fig)
+                                    st.plotly_chart(fig, use_container_width=True)
+                                    # Delete the pickle file after loading
+                                    try:
+                                        os.remove(pickle_path)
+                                    except Exception as e:
+                                        st.warning(f"Could not delete pickle file: {e}")
+                                except FileNotFoundError:
+                                    st.warning(f"Figure file not found: {image_path}")
+            
         # Chat input
         if user_input := st.chat_input("Ask a question about your data..."):
-            # Add user message to chat history
-            st.session_state.chat_history.append(HumanMessage(content=user_input))
-            
             # Create input data object with current database info
             input_data = {
                 "db_uri": st.session_state.db_uri,
@@ -278,24 +276,31 @@ with tab1:
             }
             
             # Process user message
-            st.session_state.chatbot.invoke_graph(user_input, input_data)
-            
-            # Force rerun to display the new message
-            st.rerun()
+            with chat_container:
+                with st.chat_message("Human"):
+                    st.markdown(user_input)
+                
+                with st.chat_message("AI"):
+                    # Iterate through the generator
+                    with st.spinner("Thinking..."):
+                        for message in st.session_state.chatbot.stream_graph(user_input, input_data):
+                            if isinstance(message, AIMessage):
+                                st.markdown(message.content)
+                        st.rerun()
 
     else:
         st.info("Please connect to a database first to use the query assistant.")
 
 with tab2:
     if 'chatbot' in st.session_state:
-        st.subheader("Intermediate Outputs")
+        st.markdown("#### Intermediate Outputs")
         for i, output in enumerate(st.session_state.chatbot.intermediate_outputs):
             with st.expander(f"Step {i+1}"):
                 if 'thought' in output:
-                    st.markdown("### Thought Process")
+                    st.markdown("#### Thought Process")
                     st.markdown(output['thought'])
                 if 'query' in output:
-                    st.markdown("### SQL Query")
+                    st.markdown("#### SQL Query")
                     st.code(output['query'], language="sql")
                     if 'row_count' in output:
                         st.markdown(f"**Rows Retrieved:** {output['row_count']}")
@@ -308,11 +313,11 @@ with tab2:
                     if 'message' in output:
                         st.success(output['message'])
                 if 'code' in output:
-                    st.markdown("### Python Code")
+                    st.markdown("#### Python Code")
                     st.code(output['code'], language="python")
                 if 'query' not in output:
-                    if 'output' in output:
-                        st.markdown("### Output")
+                    if 'output' in output and output['output'] != "":
+                        st.markdown("#### Output")
                         st.text(output['output'])
         if not st.session_state.chatbot.intermediate_outputs:
             st.info("No debug information available yet. Start a conversation to see intermediate outputs.")

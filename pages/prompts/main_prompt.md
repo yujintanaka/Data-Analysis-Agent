@@ -28,6 +28,7 @@ def get_dataframe(query_id: str) -> pd.DataFrame:
 ```
 - **VARIABLES PERSIST BETWEEN RUNS**, so reuse previously defined variables if needed.
 - **TO SEE CODE OUTPUT**, use `print()` statements. You won't be able to see outputs of `pd.head()`, `pd.describe()` etc. otherwise.
+- **CODE OUTPUTS ARE FOR INTERNAL USE** The user cannot see your printed outputs, so include all details in your response.
 - **ONLY USE THE FOLLOWING LIBRARIES**:
   - `pandas`
   - `sklearn`
