@@ -22,7 +22,12 @@ def is_remote_host():
     Check if the app is running on Streamlit Cloud.
     Returns True if running on Streamlit Cloud, False if running locally.
     """
-    return st.get_option("server.address") != "localhost"
+    try:
+        # Try to access a secret - if it succeeds, we're on Streamlit Cloud
+        st.secrets["OPENAI_API_KEY"]
+        return True
+    except:
+        return False
 
 st.title("Data Analysis LangGraph Agent")
 st.write("Select a database connection from the sidebar to begin.")
@@ -43,8 +48,13 @@ def get_database_connection(db_type, **kwargs):
     if db_type == "SQLite":
         try:
             db_path = kwargs.get('db_path')
+            if not os.path.exists(db_path):
+                return None, None, f"Database file not found: {db_path}"
             uri = f'sqlite:///{db_path}'
             engine = create_engine(uri)
+            # Verify connection
+            with engine.connect() as conn:
+                conn.execute("SELECT 1")
             return uri, engine, None
         except Exception as e:
             return None, None, str(e)
@@ -57,6 +67,9 @@ def get_database_connection(db_type, **kwargs):
             database = kwargs.get('database')
             uri = f'mysql+mysqlconnector://{user}:{password}@{host}:{port}/{database}'
             engine = create_engine(uri)
+            # Verify connection
+            with engine.connect() as conn:
+                conn.execute("SELECT 1")
             return uri, engine, None
         except Exception as e:
             return None, None, str(e)
@@ -69,6 +82,9 @@ def get_database_connection(db_type, **kwargs):
             database = kwargs.get('database')
             uri = f'postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}'
             engine = create_engine(uri)
+            # Verify connection
+            with engine.connect() as conn:
+                conn.execute("SELECT 1")
             return uri, engine, None
         except Exception as e:
             return None, None, str(e)
@@ -139,7 +155,7 @@ else:
     # Create an expander for connection fields
     with st.sidebar.expander("Connection Settings", expanded=not st.session_state.connection_status):
         if db_type == "SQLite":
-            db_path = st.text_input("Database Path", "database.db")
+            db_path = st.text_input("Database Path", "data/chinook.db")
             if st.button("Connect to SQLite"):
                 uri, engine, error = get_database_connection("SQLite", db_path=db_path)
                 if error:

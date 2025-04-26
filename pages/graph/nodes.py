@@ -7,11 +7,8 @@ from typing import Literal
 from .tools import make_sql_query, complete_python_task
 from langgraph.prebuilt import ToolNode
 import os
-#from dotenv import load_dotenv
 from sqlalchemy import inspect
 from .db_utils import get_db_session
-
-#load_dotenv()
 
 
 llm = ChatOpenAI(model="gpt-4o", temperature=0)
@@ -108,18 +105,18 @@ def handle_tool_output(state: AgentState) -> AgentState:
     last_message = state["messages"][-1]
     if not hasattr(last_message, "content"):
         return state
+
     # Extract output_image_paths from tool output if present
     try:
         tool_output = json.loads(last_message.content)
     except:
         return state
 
-    output = {
-        "intermediate_outputs": [tool_output]
+    # Get existing intermediate outputs
+    existing_outputs = state.get("intermediate_outputs", [])
+    
+    return {
+        "intermediate_outputs": existing_outputs + [tool_output],
+        "output_image_paths": tool_output.get("output_image_paths", []) if isinstance(tool_output, dict) else []
     }
-
-    if isinstance(tool_output, dict) and "output_image_paths" in tool_output:
-        output["output_image_paths"] = tool_output["output_image_paths"]
-
-    return output
 
