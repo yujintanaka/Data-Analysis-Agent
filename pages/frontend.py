@@ -314,9 +314,6 @@ with tab2:
                     if 'output' in output:
                         st.markdown("### Output")
                         st.text(output['output'])
-                    else:
-                        st.markdown("### Output") 
-                        st.text(output)
         if not st.session_state.chatbot.intermediate_outputs:
             st.info("No debug information available yet. Start a conversation to see intermediate outputs.")
 

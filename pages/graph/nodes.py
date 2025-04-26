@@ -11,7 +11,7 @@ from sqlalchemy import inspect
 from .db_utils import get_db_session
 
 
-llm = ChatOpenAI(model="gpt-4o", temperature=0)
+llm = ChatOpenAI(model="gpt-4o", temperature=0, streaming=True)
 
 tools = [make_sql_query, complete_python_task]
 
@@ -98,25 +98,16 @@ def handle_tool_output(state: AgentState) -> AgentState:
     """
     Processes the output from tool calls and updates the state with intermediate outputs
     and current variables.
-    """
-    if not state.get("messages"):
-        return state
-    
+    """ 
     last_message = state["messages"][-1]
     if not hasattr(last_message, "content"):
         return state
 
-    # Extract output_image_paths from tool output if present
-    try:
-        tool_output = json.loads(last_message.content)
-    except:
-        return state
-
-    # Get existing intermediate outputs
-    existing_outputs = state.get("intermediate_outputs", [])
+    # Extract output_image_paths from tool output
+    tool_output = json.loads(last_message.content)
     
-    return {
-        "intermediate_outputs": existing_outputs + [tool_output],
-        "output_image_paths": tool_output.get("output_image_paths", []) if isinstance(tool_output, dict) else []
-    }
+    state_update = { "intermediate_outputs": [tool_output] }
+    if "output_image_paths" in tool_output:
+        state_update["output_image_paths"] = tool_output["output_image_paths"]
+    return state_update
 
