@@ -6,7 +6,7 @@ import socket
 # Third-party imports
 import streamlit as st
 import pandas as pd
-from sqlalchemy import create_engine, inspect
+from sqlalchemy import create_engine, inspect, text
 from langchain_core.messages import HumanMessage, AIMessage
 
 # Database connectors
@@ -54,7 +54,7 @@ def get_database_connection(db_type, **kwargs):
             engine = create_engine(uri)
             # Verify connection
             with engine.connect() as conn:
-                conn.execute("SELECT 1")
+                conn.execute(text("SELECT 1")).fetchone()
             return uri, engine, None
         except Exception as e:
             return None, None, str(e)
@@ -69,7 +69,7 @@ def get_database_connection(db_type, **kwargs):
             engine = create_engine(uri)
             # Verify connection
             with engine.connect() as conn:
-                conn.execute("SELECT 1")
+                conn.execute(text("SELECT 1")).fetchone()
             return uri, engine, None
         except Exception as e:
             return None, None, str(e)
@@ -84,7 +84,7 @@ def get_database_connection(db_type, **kwargs):
             engine = create_engine(uri)
             # Verify connection
             with engine.connect() as conn:
-                conn.execute("SELECT 1")
+                conn.execute(text("SELECT 1")).fetchone()
             return uri, engine, None
         except Exception as e:
             return None, None, str(e)
