@@ -131,7 +131,7 @@ st.sidebar.title("Database Connection")
 
 # If running on Streamlit Cloud, only allow SQLite with chinook.db
 if is_remote_host():
-    st.sidebar.warning("⚠️ Running on Streamlit Cloud: You can only connect to our sample database.")
+    st.sidebar.warning("⚠️ Running on Streamlit Cloud: Run the app locally to connect to your own database. You can still connect to the chinook.db sample database.")
     db_type = "SQLite"
     if not st.session_state.connection_status:
         if st.sidebar.button("Connect to chinook.db"):
@@ -146,7 +146,6 @@ if is_remote_host():
                 st.session_state.db_schema = get_schema(engine)
                 st.session_state.db_uri = uri
 else:
-    st.sidebar.info("Running locally: You can connect to any database.")
     db_type = st.sidebar.selectbox(
         "Select Database Type",
         ["SQLite", "MySQL", "PostgreSQL"]
