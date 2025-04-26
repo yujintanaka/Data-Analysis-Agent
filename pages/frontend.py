@@ -24,7 +24,7 @@ def is_remote_host():
     """
     try:
         # Try to access a secret - if it succeeds, we're on Streamlit Cloud
-        st.secrets["OPENAI_API_KEY"]
+        _ = st.secrets["OPENAI_API_KEY"]
         return True
     except:
         return False

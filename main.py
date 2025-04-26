@@ -12,7 +12,7 @@ def is_remote_host():
     """
     try:
         # Try to access a secret - if it succeeds, we're on Streamlit Cloud
-        st.secrets["OPENAI_API_KEY"]
+        _ = st.secrets["OPENAI_API_KEY"]
         return True
     except:
         return False
@@ -22,15 +22,13 @@ if not is_remote_host():
     load_dotenv()
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
-        st.error("Please set OPENAI_API_KEY in your .env file")
-        st.stop()
+        st.error("API key not found. Please check your environment configuration.")
 else:
     try:
         # Access the API key from Streamlit secrets if running on Streamlit Cloud
         api_key = st.secrets["OPENAI_API_KEY"]
     except:
         st.error("Couldn't get API key from secrets")
-        st.stop()
 
 # Set the API key for the OpenAI library
 os.environ["OPENAI_API_KEY"] = api_key
