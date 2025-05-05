@@ -9,3 +9,5 @@ python-dotenv==1.1.0
 scikit_learn==1.6.1
 SQLAlchemy==2.0.40
 streamlit==1.44.1
+statsmodels==0.14.4
+
