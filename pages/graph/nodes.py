@@ -97,17 +97,21 @@ def route_to_tools(state: AgentState,) -> Literal["tools", "__end__"]:
 def handle_tool_output(state: AgentState) -> AgentState:
     """
     Processes the output from tool calls and updates the state with intermediate outputs
-    and current variables.
+    and current variables. Returns the original state if there's an error processing the tool output.
     """ 
     last_message = state["messages"][-1]
     if not hasattr(last_message, "content"):
         return state
 
-    # Extract output_image_paths from tool output
-    tool_output = json.loads(last_message.content)
-    
-    state_update = { "intermediate_outputs": [tool_output] }
-    if "output_image_paths" in tool_output:
-        state_update["output_image_paths"] = tool_output["output_image_paths"]
-    return state_update
+    try:
+        # Extract output_image_paths from tool output
+        tool_output = json.loads(last_message.content)
+        
+        state_update = { "intermediate_outputs": [tool_output] }
+        if "output_image_paths" in tool_output:
+            state_update["output_image_paths"] = tool_output["output_image_paths"]
+        return state_update
+    except (json.JSONDecodeError, TypeError):
+        # Return original state if there's an error parsing the tool output
+        return state
 
