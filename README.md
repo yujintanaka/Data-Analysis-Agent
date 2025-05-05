@@ -138,8 +138,6 @@ The application will be available at `http://localhost:8501` by default.
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## To Do:
-- Show both tool outputs when called simultaneously in one graph run
-- Fix json decode error for some queries
 - Add Copy or download option for chat
 
 ## 🙏 Acknowledgments
