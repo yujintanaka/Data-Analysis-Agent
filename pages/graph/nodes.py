@@ -96,22 +96,52 @@ def route_to_tools(state: AgentState,) -> Literal["tools", "__end__"]:
 
 def handle_tool_output(state: AgentState) -> AgentState:
     """
-    Processes the output from tool calls and updates the state with intermediate outputs
-    and current variables. Returns the original state if there's an error processing the tool output.
+    Processes the output from the most recent tool calls and updates the state with intermediate outputs
+    and current variables. Returns the original state if there's an error processing any tool output.
     """ 
-    last_message = state["messages"][-1]
-    if not hasattr(last_message, "content"):
+    if not state.get("messages"):
         return state
 
     try:
-        # Extract output_image_paths from tool output
-        tool_output = json.loads(last_message.content)
+        # Initialize state update with empty lists
+        state_update = {
+            "intermediate_outputs": []
+        }
+        image_paths = []
         
-        state_update = { "intermediate_outputs": [tool_output] }
-        if "output_image_paths" in tool_output:
-            state_update["output_image_paths"] = tool_output["output_image_paths"]
-        return state_update
-    except (json.JSONDecodeError, TypeError):
-        # Return original state if there's an error parsing the tool output
+        # Find the last non-tool message to determine where to start processing
+        last_non_tool_idx = -1
+        for i, message in enumerate(reversed(state["messages"])):
+            if not isinstance(message, ToolMessage):
+                last_non_tool_idx = len(state["messages"]) - i - 1
+                break
+        
+        # Process only the messages after the last non-tool message
+        for message in state["messages"][last_non_tool_idx + 1:]:
+            if not isinstance(message, ToolMessage):
+                continue
+                
+            try:
+                tool_output = json.loads(message.content)
+                state_update["intermediate_outputs"].append(tool_output)
+                
+                # Accumulate image paths if present
+                if "output_image_paths" in tool_output:
+                    image_paths.extend(tool_output["output_image_paths"])
+            except (json.JSONDecodeError, TypeError):
+                # Skip invalid tool outputs but continue processing other messages
+                continue
+        
+        # Only add output_image_paths to state update if we found any
+        if image_paths:
+            state_update["output_image_paths"] = image_paths
+            
+        # Only return state update if we found valid tool outputs
+        if state_update["intermediate_outputs"]:
+            return state_update
+        return state
+        
+    except Exception:
+        # Return original state if there's any error in the overall process
         return state
 
